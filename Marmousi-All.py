@@ -5,6 +5,7 @@ from math import pi
 from math import sqrt
 from math import exp
 
+
 ## Declaração de variáveis
 fcorte = 60 # frequência da onda
 u = 5       # constante de malha (mi)
@@ -16,6 +17,8 @@ Nz = 121    # tamanho do eixo z (profundidade)
 a = 1       # contador do loop
 psx = 192   # posição da fonte no eixo x (x - 1)
 psz = 2     # posição da fonte no eixo z (z -1)
+comp = 100  # valor de comparação
+
 
 ## Definição de funções
 
@@ -55,45 +58,54 @@ def Nf(fcorte, DT):
     Nf = 4 * sqrt(pi) / (fcorte * DT)
     return Nf
 
+
 ## Criando matrizes zeradas
 P1 = np.zeros((Nz, Nx))
 P2 = np.zeros((Nz, Nx))
 P3 = np.zeros((Nz, Nx))
 C = np.zeros((Nz, Nx))
 A = np.zeros((Nz, Nx))
-sis = np.zeros((Nz, Nx))
+
 
 ## Tranferência do valor da matriz data para marmousitrix
 marmousitrix = marmousi() 
+
 
 ## Obtenção dos valores de DT e h fora das funções
 DT = dtcalculo(u)
 h = dtcalculoh(Vmin, k, fcorte)
 
+
 ## Cálculo das matrizes C e A
 for i in range(Nz):
     for k in range(Nx):
         C[i, k] = - (marmousitrix[i, k] * (DT/h)) ** 2
-#print(C)
 
 for i in range(Nz):
     for k in range(Nx):
         A[i, k] = marmousitrix[i, k] * (DT/h)
-#print(A)
+
 
 ## Obtenção dos passos de tempo totais
 Nf = int(Nf(fcorte, DT))
+DS = sqrt(((Nx * h) ** 2) + ((Nz * h) ** 2))
+Vm = (Vmax + Vmin) / 2
+T = DS / Vm
+ntotal = int(T / DT)
+
 
 ## Computação do campo de pressão
-for n in range(Nf + 1):
-
+for n in range(1, ntotal + 2):
+    
+    # Definição do tempo de comparação
+    if n == comp:
+        comp = str(comp)
+        plt.savefig("{}.png".format(comp))
+    
     # Termo fonte
     if n <= Nf:
         P2[psz, psx] = P2[psz, psx] + fonte(fcorte, n)
            
-        # print(fonte(60, n))
-        # print(P2[2, 192])
-       
     # Cálculo do Campo no interior do modelo
     for k in range(3, Nx - 2):
         for i in range(3, Nz - 2):
@@ -104,6 +116,9 @@ for n in range(Nf + 1):
     # Atualização do campo de onda
     P2 = P3
     P1 = P2
-            
+        
     print (a)
-    a = a + 1
+    a += 1
+    comp += 100
+    
+plt.imshow(P3)
